@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Códigos de Barra - Impresión A4</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- BARRA SUPERIOR DE LA APLICACIÓN -->
+  <header class="app-header no-print">
+    <div class="header-brand">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 5v14M6 5v14M9 5v14M12 5v14M16 5v14M19 5v14M21 5v14"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Generador de Códigos de Barra</h1>
+        <p class="subtitle">Etiquetas personalizadas listas para imprimir en hojas A4</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-quick-samples" class="btn btn-secondary" title="Cargar productos de ejemplo para probar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Cargar Ejemplos
+      </button>
+
+      <button id="btn-bulk-import-modal" class="btn btn-secondary" title="Cargar varios productos pegando texto">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        Carga Masiva
+      </button>
+
+      <button id="btn-print" class="btn btn-primary btn-print-main" title="Imprimir etiquetas en formato A4">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Imprimir A4 (<kbd>Ctrl+P</kbd>)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="app-layout">
+    <!-- PANEL LATERAL DE CONFIGURACIÓN Y PRODUCTOS -->
+    <aside class="sidebar no-print">
+      <!-- PESTAÑAS O SECCIONES -->
+      <nav class="sidebar-tabs" aria-label="Navegación de configuración">
+        <button class="tab-btn active" data-tab="tab-producto">➕ Producto</button>
+        <button class="tab-btn" data-tab="tab-diseno">📐 Ajustes A4</button>
+        <button class="tab-btn" data-tab="tab-lista">
+          📋 Lista (<span id="badge-count">0</span>)
+        </button>
+      </nav>
+
+      <!-- TAB 1: FORMULARIO DE PRODUCTO -->
+      <section id="tab-producto" class="tab-content active">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2 id="form-title">Agregar Producto</h2>
+            <button id="btn-cancel-edit" class="btn btn-sm btn-outline hidden">Cancelar edición</button>
+          </div>
+
+          <form id="product-form" autocomplete="off">
+            <input type="hidden" id="edit-id" value="">
+
+            <div class="form-group">
+              <label for="prod-name">Nombre del Producto <span class="required">*</span></label>
+              <input type="text" id="prod-name" placeholder="Ej: Jabón Líquido Antibacterial" required autofocus>
+            </div>
+
+            <div class="form-group">
+              <label for="prod-desc">Características / Detalle <span class="required">*</span></label>
+              <input type="text" id="prod-desc" placeholder="Ej: Fragancia Aloe Vera - 500ml - $4.500" required>
+              <small class="helper-text">Se mostrará arriba o abajo del código de barras</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="prod-code">Código de Barra <span class="required">*</span></label>
+                <div class="input-with-button">
+                  <input type="text" id="prod-code" placeholder="Ej: 7791234567890 o PROD-01" required>
+                  <button type="button" id="btn-generate-code" class="btn btn-icon" title="Generar código aleatorio">
+                    🎲
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group flex-1">
+                <label for="prod-format">Tipo</label>
+                <select id="prod-format">
+                  <option value="CODE128" selected>CODE128 (Letras y Nº)</option>
+                  <option value="EAN13">EAN-13 (13 dígitos)</option>
+                  <option value="EAN8">EAN-8 (8 dígitos)</option>
+                  <option value="UPC">UPC-A (12 dígitos)</option>
+                  <option value="CODE39">CODE39</option>
+                  <option value="ITF">ITF-14</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="prod-qty">Cantidad de Etiquetas</label>
+                <input type="number" id="prod-qty" min="1" max="500" value="12" required>
+              </div>
+              <div class="form-group flex-1">
+                <label for="prod-extra">Dato Extra (Opcional)</label>
+                <input type="text" id="prod-extra" placeholder="Ej: Venc: 12/27 o SKU">
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" id="btn-save-product" class="btn btn-primary btn-block">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span id="btn-save-label">Agregar Producto a la Lista</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- VISTA PREVIA RÁPIDA DE ETIQUETA UNITARIA -->
+        <div class="panel-card mt-3">
+          <div class="panel-header">
+            <h3>Vista Previa Individual</h3>
+          </div>
+          <div class="unit-preview-box" id="unit-preview-container">
+            <div class="sample-label-preview" id="unit-preview-card">
+              <div class="label-name" id="prev-name">Nombre del Producto</div>
+              <div class="label-desc" id="prev-desc">Características / Descripción aquí</div>
+              <svg id="prev-barcode" class="barcode-svg"></svg>
+              <div class="label-extra" id="prev-extra"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: AJUSTES DE HOJA A4 Y FORMATO DE ETIQUETAS -->
+      <section id="tab-diseno" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2>Configuración de Hoja A4</h2>
+          </div>
+
+          <div class="form-group">
+            <label for="grid-preset">Distribución / Plantilla de Etiquetas</label>
+            <select id="grid-preset">
+              <option value="3x8" selected>3 Columnas × 8 Filas (24 etiquetas por A4 - Estándar)</option>
+              <option value="4x10">4 Columnas × 10 Filas (40 etiquetas por A4 - Pequeñas)</option>
+              <option value="3x7">3 Columnas × 7 Filas (21 etiquetas por A4)</option>
+              <option value="2x5">2 Columnas × 5 Filas (10 etiquetas por A4 - Grandes/Cajas)</option>
+              <option value="2x7">2 Columnas × 7 Filas (14 etiquetas por A4)</option>
+              <option value="custom">Personalizado (Elegir columnas y alto)</option>
+            </select>
+          </div>
+
+          <div id="custom-grid-options" class="hidden">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="custom-cols">Columnas</label>
+                <input type="number" id="custom-cols" min="1" max="6" value="3">
+              </div>
+              <div class="form-group flex-1">
+                <label for="custom-height">Alto mínimo (mm)</label>
+                <input type="number" id="custom-height" min="15" max="120" value="34">
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="panel-header">
+            <h3>Elementos Visibles en la Etiqueta</h3>
+          </div>
+
+          <div class="toggles-list">
+            <label class="toggle-control">
+              <input type="checkbox" id="opt-show-name" checked>
+              <span class="toggle-slider"></span>
+              <span>Mostrar Nombre del Producto</span>
+            </label>
+
+            <label class="toggle-control">
+              <input type="checkbox" id="opt-show-desc" checked>
+              <span class="toggle-slider"></span>
+              <span>Mostrar Características / Detalle</span>
+            </label>
+
+            <label class="toggle-control">
+              <input type="checkbox" id="opt-show-code-text" checked>
+              <span class="toggle-slider"></span>
+              <span>Mostrar Número del Código abajo</span>
+            </label>
+
+            <label class="toggle-control">
+              <input type="checkbox" id="opt-show-borders" checked>
+              <span class="toggle-slider"></span>
+              <span>Borde de etiqueta (guía para recortar)</span>
+            </label>
+
+            <label class="toggle-control">
+              <input type="checkbox" id="opt-dotted-border">
+              <span class="toggle-slider"></span>
+              <span>Borde punteado para tijera</span>
+            </label>
+          </div>
+
+          <hr class="divider">
+
+          <div class="panel-header">
+            <h3>Dimensiones de las Barras</h3>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="opt-bar-height">Altura Código (px)</label>
+              <input type="range" id="opt-bar-height" min="25" max="80" value="45">
+              <div class="range-value"><span id="val-bar-height">45</span> px</div>
+            </div>
+            <div class="form-group flex-1">
+              <label for="opt-bar-width">Grosor de Barra</label>
+              <input type="range" id="opt-bar-width" min="1" max="3" step="0.2" value="1.6">
+              <div class="range-value"><span id="val-bar-width">1.6</span>x</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="opt-align">Alineación del Contenido</label>
+            <select id="opt-align">
+              <option value="center" selected>Centrado</option>
+              <option value="left">Alineado a la Izquierda</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: LISTA DE PRODUCTOS CARGADOS -->
+      <section id="tab-lista" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2>Productos Agregados</h2>
+            <button id="btn-clear-all" class="btn btn-sm btn-danger" title="Borrar todos los productos">
+              Vaciar
+            </button>
+          </div>
+
+          <div id="product-items-list" class="product-items-container">
+            <!-- Se llena dinámicamente -->
+            <div class="empty-state" id="empty-state-msg">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <p>No tienes productos agregados aún.</p>
+              <button class="btn btn-sm btn-outline mt-2" onclick="loadSampleProducts()">Cargar datos de ejemplo</button>
+            </div>
+          </div>
+
+          <div class="list-summary-footer" id="list-summary-footer">
+            <div class="summary-item">
+              <span class="label">Total Productos:</span>
+              <strong id="stat-products-count">0</strong>
+            </div>
+            <div class="summary-item">
+              <span class="label">Total Etiquetas:</span>
+              <strong id="stat-labels-count">0</strong>
+            </div>
+            <div class="summary-item">
+              <span class="label">Hojas A4 Requeridas:</span>
+              <strong id="stat-pages-count">0</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL: VISTA PREVIA DE LAS HOJAS A4 -->
+    <section class="main-preview-area">
+      <!-- BARRA DE INFORMACIÓN Y ACCIONES RÁPIDAS DE IMPRESIÓN -->
+      <div class="preview-toolbar no-print">
+        <div class="toolbar-info">
+          <span class="status-pill">
+            <span class="status-dot"></span>
+            <span id="preview-stats">Cargando vista previa...</span>
+          </span>
+          <span class="a4-tag">📄 Papel A4 (210 × 297 mm)</span>
+        </div>
+
+        <div class="toolbar-tools">
+          <label class="zoom-label" for="zoom-selector">Zoom:</label>
+          <select id="zoom-selector" class="select-sm">
+            <option value="0.7">70%</option>
+            <option value="0.85">85%</option>
+            <option value="1" selected>100% (Real)</option>
+            <option value="1.15">115%</option>
+          </select>
+
+          <button id="btn-print-secondary" class="btn btn-primary btn-sm">
+            🖨️ Imprimir
+          </button>
+        </div>
+      </div>
+
+      <!-- AVISO DE CONSEJO DE IMPRESIÓN -->
+      <div class="print-tip-banner no-print">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <div>
+          <strong>Consejo para imprimir:</strong> En la ventana de impresión (Ctrl+P), asegúrate de que el tamaño de papel sea <strong>A4</strong>, escala en <strong>100% (Predeterminada)</strong> y desactiva <strong>"Encabezados y pies de página"</strong>.
+        </div>
+      </div>
+
+      <!-- CONTENEDOR DE HOJAS A4 (Se renderiza una hoja o varias hojas A4) -->
+      <div id="a4-pages-container" class="a4-pages-wrapper">
+        <!-- Renderizado dinámicamente -->
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: CARGA MASIVA -->
+  <dialog id="modal-bulk" class="modal-dialog no-print">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Carga Masiva de Productos</h3>
+        <button type="button" class="btn-close" id="btn-close-bulk">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-2">Pega tu lista de productos aquí (formato: <code>Nombre | Características | Código | Cantidad</code> o separado por comas / tabulaciones de Excel):</p>
+        <textarea id="bulk-textarea" rows="8" placeholder="Remera Estampada | Algodón Talle L - Negro - $12.000 | REM-EST-01 | 8
+Pantalón Jean Clásico | Talle 42 - Azul Oscuro - $24.500 | JEAN-42-AZ | 6
+Zapatillas Deportivas | Cuero Sintético - Talle 40 - $38.000 | 7793456789012 | 10"></textarea>
+        <small class="helper-text">Cada fila representa un producto. Si no colocas código, se generará uno automáticamente.</small>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-bulk">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-process-bulk">Procesar e Importar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- LIBRERÍA DE CÓDIGO DE BARRAS (LOCAL CON RESPALDO CDN) -->
+  <script src="lib/JsBarcode.all.min.js"></script>
+  <script>
+    if (typeof JsBarcode === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>');
+    }
+  </script>
+  <!-- SCRIPT PRINCIPAL DE LA APLICACIÓN -->
+  <script src="app.js"></script>
+</body>
+</html>
